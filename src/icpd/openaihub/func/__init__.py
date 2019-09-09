@@ -368,11 +368,11 @@ def install(namespace, storage, loglevel, openshift):
         run("oc adm policy add-cluster-role-to-user cluster-admin -z pipeline-runner")
         
         run("oc get clusterrole argo -o yaml > %s/argo.yaml" % openaihub_patch_path)
-        argo_patch(openaihub_patch_path + "argo.yaml")
+        argo_patch(os.path.join(openaihub_patch_path, "argo.yaml"))
         run("oc apply -f %s/argo.yaml" % openaihub_patch_path)
 
         run("oc get clusterrole studyjob-controller -o yaml > %s/studyjob.yaml" % openaihub_patch_path)
-        studyjob_patch(openaihub_patch_path + "studyjob.yaml")
+        studyjob_patch(os.path.join(openaihub_patch_path, "studyjob.yaml"))
         run("oc apply -f %s/studyjob.yaml" % openaihub_patch_path)
 
         run("oc get deployment minio -o yaml > %s/minio.yaml" % openaihub_patch_path)
