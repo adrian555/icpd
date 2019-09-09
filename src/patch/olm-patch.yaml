@@ -1,0 +1,8 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: olm-operator
+          resources:
+            limits:
+            memory: "2000Mi"
