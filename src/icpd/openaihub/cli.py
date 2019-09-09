@@ -31,7 +31,7 @@ def cli():
 
 @cli.command()
 @click.version_option(expose_value=False)
-@click.option("--openshift", metavar="PLATFORM", type=click.Choice(['openshift', 'k8s']), default='k8s', show_default=True,
+@click.option("--openshift", metavar="PLATFORM", is_flag=True, default=False,
               help="install on openshift or others")
 @click.option("--path", metavar="PATH", required=True,
               help="path to the operator manifest")
@@ -49,7 +49,7 @@ def register(path, operator, logpath, loglevel, verbose, openshift):
 
 @cli.command()
 @click.version_option(expose_value=False)
-@click.option("--openshift", metavar="PLATFORM", type=click.Choice(['openshift', 'k8s']), default='k8s', show_default=True,
+@click.option("--openshift", metavar="PLATFORM", is_flag=True, default=False,
               help="install on openshift or others")
 @click.option("--namespace", "-e", metavar="NAMESPACE", default="operators", show_default=True,
               help="namespace where the applications will be installed")
@@ -64,7 +64,7 @@ def install(namespace, storage, loglevel, verbose, openshift):
 
 @cli.command()
 @click.version_option(expose_value=False)
-@click.option("--openshift", metavar="PLATFORM", type=click.Choice(['openshift', 'k8s']), default='k8s', show_default=True,
+@click.option("--openshift", metavar="PLATFORM", is_flag=True, default=False,
               help="install on openshift or others")
 @click.option("--operator", "-o", metavar="NAME", required=True,
               help="name of the operator to be installed")

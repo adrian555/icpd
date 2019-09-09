@@ -34,6 +34,7 @@ setuptools.setup(
     install_requires=[
         'click',
         'GitPython',
+        'PyYAML',
         'wget'
     ],
     entry_points='''

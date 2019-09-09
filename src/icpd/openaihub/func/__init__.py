@@ -272,14 +272,14 @@ def install(namespace, storage, loglevel, openshift):
     step += 1
     logger.info("### %s/%s ### Create namespace and add cluster admin..." % (step, steps))
     if run("kubectl get namespace %s" % openaihub_namespace).returncode != 0:
-        if openshift == "openshift":
+        if openshift:
             check_call(run, "oc new-project %s" % openaihub_namespace)
         else:
             check_call(run, "kubectl create namespace %s" % openaihub_namespace)
 
     # add cluster-admin to default service account for registration and installation of other operators
     if run("kubectl get clusterrolebinding add-on-cluster-admin-openaihub").returncode != 0:
-        if openshift == "openshift":
+        if openshift:
             check_call(run, "oc adm policy add-cluster-role-to-user cluster-admin -z default")
         else:
             check_call(run, "kubectl create clusterrolebinding add-on-cluster-admin-openaihub --clusterrole=cluster-admin --serviceaccount=%s:default" % openaihub_namespace)
@@ -290,7 +290,7 @@ def install(namespace, storage, loglevel, openshift):
         check_call(run, "kubectl create configmap openaihub-install-config --from-literal=KUBECTL_VERSION=%s -n operators" % kube_version)
 
     # special handling for openshift
-    if openshift == "openshift":
+    if openshift:
         run("oc adm policy add-scc-to-user privileged -z default")
         run("oc adm policy add-scc-to-user anyuid -z ambassador")
         run("oc adm policy add-scc-to-user anyuid -z default")
@@ -313,7 +313,7 @@ def install(namespace, storage, loglevel, openshift):
     check_call(run, "kubectl apply -f %s/openaihub_v1alpha1_%s_cr.yaml -n %s" % (openaihub_cr_path, "jupyterlab", openaihub_namespace))
 
     # switch default storageclass to nfs-dynamic
-    if openshift != "openshift":
+    if not openshift:
         if storage == "nfs":
             step += 1
             logger.info("### %s/%s ### Wait for nfs-dynamic storageclass to be ready and set as default..." % (step, steps))
@@ -357,7 +357,7 @@ def install(namespace, storage, loglevel, openshift):
     check_call(run, "kubectl apply -f %s/openaihub_v1alpha1_%s_cr.yaml -n %s" % (openaihub_cr_path, "openaihub", openaihub_namespace))
 
     # special handling for openshift
-    if openshift == "openshift":
+    if openshift:
         # pylint: disable=unused-variable
         for x in range(80):
             if run("oc get pods -o=jsonpath='{range .items[*]}{@.metadata.name}{\" \"}{@.status.phase}{\"\n\"}' |grep openaihub-ui|cut -d' ' -f2").stdout != "Running" :
