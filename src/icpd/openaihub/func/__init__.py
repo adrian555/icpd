@@ -263,7 +263,7 @@ def install(namespace, storage, loglevel, openshift):
     check_call(run, "kubectl apply -f %s/openaihub.catalogsource.yaml" % openaihub_catalog_path)
     # pylint: disable=unused-variable
     for x in range(40):
-        if run("kubectl get packagemanifest|grep OpenAIHub|wc -l").stdout.decode().lstrip().rstrip() != "6":
+        if run("kubectl get packagemanifest|grep OpenAIHub|wc -l").stdout.decode().lstrip().rstrip() != "4":
             time.sleep(15)
         else:
             break
@@ -360,7 +360,7 @@ def install(namespace, storage, loglevel, openshift):
     if openshift:
         # pylint: disable=unused-variable
         for x in range(80):
-            if run("oc get pods -o=jsonpath='{range .items[*]}{@.metadata.name}{\" \"}{@.status.phase}{\"\n\"}' |grep openaihub-ui|cut -d' ' -f2").stdout != "Running" :
+            if run("oc get pods -o=jsonpath='{range .items[*]}{@.metadata.name}{\" \"}{@.status.phase}{\"\\n\"}' |grep openaihub-ui|cut -d' ' -f2").stdout.decode().rstrip() != "Running" :
                 time.sleep(15)
             else:
                 break
@@ -368,12 +368,10 @@ def install(namespace, storage, loglevel, openshift):
         run("oc adm policy add-cluster-role-to-user cluster-admin -z pipeline-runner")
         
         run("oc get clusterrole argo -o yaml > %s/argo.yaml" % openaihub_patch_path)
-        from patch.openshift_patch import argo_patch
         argo_patch(openaihub_patch_path + "argo.yaml")
         run("oc apply -f %s/argo.yaml" % openaihub_patch_path)
 
         run("oc get clusterrole studyjob-controller -o yaml > %s/studyjob.yaml" % openaihub_patch_path)
-        from patch.openshift_patch import studyjob_patch
         studyjob_patch(openaihub_patch_path + "studyjob.yaml")
         run("oc apply -f %s/studyjob.yaml" % openaihub_patch_path)
 
@@ -389,5 +387,32 @@ def install(namespace, storage, loglevel, openshift):
     shutil.rmtree(basedir, ignore_errors=True)
 
     logger.info("Done.")
+
+def argo_patch(path):
+  y = yaml.safe_load(open(path))
+  del y["metadata"]
+  y["metadata"] = dict()
+  y["metadata"]["labels"] = dict()
+  y["metadata"]["labels"]["app"] = "argo"
+  y["metadata"]["name"] = "argo"
+  for x in y["rules"]:
+    if "pods" in x["resources"]:
+      x["verbs"].append('delete')
+    elif "workflows" in x["resources"]:
+      x["resources"].append('workflows/finalizers')
+  yaml.dump(y, open(path,'w'), default_flow_style=False)
+
+def studyjob_patch(path):
+  y = yaml.safe_load(open(path))
+  del y["metadata"]
+  y["metadata"] = dict()
+  y["metadata"]["name"] = "studyjob-controller"
+  for x in y["rules"]:
+    if "jobs" in x["resources"]:
+      x["resources"].append('jobs/finalizers')
+    elif "tfjobs" in x["resources"]:
+      x["resources"].append('tfjobs/finalizers')
+      x["resources"].append('pytorchjobs/finalizers')
+  yaml.dump(y, open(path,'w'), default_flow_style=False)
 
 __all__ = ["install", "install_operator", "register"]
