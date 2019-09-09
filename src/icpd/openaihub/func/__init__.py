@@ -371,10 +371,6 @@ def install(namespace, storage, loglevel, openshift):
         argo_patch(os.path.join(openaihub_patch_path, "argo.yaml"))
         run("oc apply -f %s/argo.yaml" % openaihub_patch_path)
 
-        run("oc get clusterrole studyjob-controller -o yaml > %s/studyjob.yaml" % openaihub_patch_path)
-        studyjob_patch(os.path.join(openaihub_patch_path, "studyjob.yaml"))
-        run("oc apply -f %s/studyjob.yaml" % openaihub_patch_path)
-
         run("oc get deployment minio -o yaml > %s/minio.yaml" % openaihub_patch_path)
         run("sed -i '/subPath: minio/d' %s/minio.yaml" % openaihub_patch_path)
         run("oc apply -f %s/minio.yaml" % openaihub_patch_path)
@@ -382,6 +378,37 @@ def install(namespace, storage, loglevel, openshift):
         public_ip = os.getenv("PUBLIC_IP")
         run("sed -i 's/<none>/%s/g' %s/openaihub-ui.patch.yaml" % (public_ip, openaihub_patch_path))
         run("oc patch deployment openaihub-ui -p \"$(cat %s/openaihub-ui.patch.yaml)\"" % openaihub_patch_path)
+
+    # create kubeflow operator
+    step += 1
+    logger.info("### %s/%s ### Deploy Kubeflow operator..." % (step, steps))
+    check_call(run, "kubectl apply -f %s/%s-operator.yaml" % (openaihub_subscription_path, "kubeflow"))
+
+    # wait until kubeflow operator is available
+    step += 1
+    logger.info("### %s/%s ### Wait until Kubeflow operator is available..." % (step, steps))
+    wait_for("kubeflow", "operators")
+
+    # give permssion for kubeflow-operator
+    if openshift:
+        run("oc adm policy add-cluster-role-to-user cluster-admin -z kubeflow-operator -n operators")
+
+    # create kubeflow cr
+    step += 1
+    logger.info("### %s/%s ### Create Kubeflow deployment..." % (step, steps))
+    check_call(run, "kubectl apply -f %s/openaihub_v1alpha1_%s_cr.yaml -n %s" % (openaihub_cr_path, "kubeflow", openaihub_namespace))
+
+    # update clusterrole
+    if openshift:
+        # pylint: disable=unused-variable
+        for x in range(80):
+            if run("oc get pods -o=jsonpath='{range .items[*]}{@.metadata.name}{\" \"}{@.status.phase}{\"\\n\"}' |grep studyjob-controller|cut -d' ' -f2").stdout.decode().rstrip() != "Running" :
+                time.sleep(15)
+            else:
+                break        
+        run("oc get clusterrole studyjob-controller -o yaml > %s/studyjob.yaml" % openaihub_patch_path)
+        studyjob_patch(os.path.join(openaihub_patch_path, "studyjob.yaml"))
+        run("oc apply -f %s/studyjob.yaml" % openaihub_patch_path)
 
     # remove temp
     shutil.rmtree(basedir, ignore_errors=True)
