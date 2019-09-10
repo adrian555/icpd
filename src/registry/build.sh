@@ -11,5 +11,5 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 # See the License for the specific language governing permissions and 
 # limitations under the License. 
-docker build . -t ffdlops/operators:v0.0.1
-docker push ffdlops/operators:v0.0.1
+docker build . -t ffdlops/icpd-registry:v0.0.1
+docker push ffdlops/icpd-registry:v0.0.1
