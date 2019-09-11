@@ -387,8 +387,9 @@ def install(namespace, storage, loglevel, openshift):
                 break
 
         public_ip = os.getenv("PUBLIC_IP")
-        run("sed -i 's/<none>/%s/g' %s/openaihub-ui.patch.yaml" % (public_ip, openaihub_patch_path))
-        run("oc patch deployment openaihub-ui -p \"$(cat %s/openaihub-ui.patch.yaml)\"" % openaihub_patch_path)
+        run("oc get deployment openaihub-ui -o yaml > %s/openaihub-ui.yaml" % openaihub_patch_path)
+        run("sed -i 's/<none>/%s/g' %s/openaihub-ui.yaml" % (public_ip, openaihub_patch_path))
+        run("oc apply -f %s/openaihub-ui.yaml" % openaihub_patch_path)
 
     # create kubeflow operator
     step += 1
