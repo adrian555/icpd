@@ -341,6 +341,24 @@ def install(namespace, storage, loglevel, openshift):
     logger.info("### %s/%s ### Create Pipelines deployment..." % (step, steps))
     check_call(run, "kubectl apply -f %s/openaihub_v1alpha1_%s_cr.yaml -n %s" % (openaihub_cr_path, "pipelines", openaihub_namespace))
 
+    if openshift:
+        # pylint: disable=unused-variable
+        for x in range(80):
+            if run("oc get pods -o=jsonpath='{range .items[*]}{@.metadata.name}{\" \"}{@.status.phase}{\"\\n\"}' |grep argo-ui|cut -d' ' -f2").stdout.decode().rstrip() != "Running" :
+                time.sleep(15)
+            else:
+                break
+        run("oc adm policy add-scc-to-user anyuid -z pipeline-runner")
+        run("oc adm policy add-cluster-role-to-user cluster-admin -z pipeline-runner")
+        
+        run("oc get clusterrole argo -o yaml > %s/argo.yaml" % openaihub_patch_path)
+        argo_patch(os.path.join(openaihub_patch_path, "argo.yaml"))
+        run("oc apply -f %s/argo.yaml" % openaihub_patch_path)
+
+        run("oc get deployment minio -o yaml > %s/minio.yaml" % openaihub_patch_path)
+        run("sed -i '/subPath: minio/d' %s/minio.yaml" % openaihub_patch_path)
+        run("oc apply -f %s/minio.yaml" % openaihub_patch_path)
+
     # create openaihub operator
     step += 1
     logger.info("### %s/%s ### Deploy OpenAIHub operator..." % (step, steps))
@@ -364,16 +382,6 @@ def install(namespace, storage, loglevel, openshift):
                 time.sleep(15)
             else:
                 break
-        run("oc adm policy add-scc-to-user anyuid -z pipeline-runner")
-        run("oc adm policy add-cluster-role-to-user cluster-admin -z pipeline-runner")
-        
-        run("oc get clusterrole argo -o yaml > %s/argo.yaml" % openaihub_patch_path)
-        argo_patch(os.path.join(openaihub_patch_path, "argo.yaml"))
-        run("oc apply -f %s/argo.yaml" % openaihub_patch_path)
-
-        run("oc get deployment minio -o yaml > %s/minio.yaml" % openaihub_patch_path)
-        run("sed -i '/subPath: minio/d' %s/minio.yaml" % openaihub_patch_path)
-        run("oc apply -f %s/minio.yaml" % openaihub_patch_path)
 
         public_ip = os.getenv("PUBLIC_IP")
         run("sed -i 's/<none>/%s/g' %s/openaihub-ui.patch.yaml" % (public_ip, openaihub_patch_path))
