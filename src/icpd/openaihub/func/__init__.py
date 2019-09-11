@@ -254,6 +254,9 @@ def install(namespace, storage, loglevel, openshift):
         # TODO: investigate the memory increase problem in OLM and provide proper fix, for now, limit the memory
         check_call(run, "kubectl patch deployment olm-operator --patch \"$(cat %s/olm-patch.yaml)\" -n olm" % openaihub_patch_path)
         check_call(run, "kubectl patch deployment catalog-operator --patch \"$(cat %s/catalog-patch.yaml)\" -n olm" % openaihub_patch_path)
+
+        # install olm-console
+        run("kubectl apply -f %s/src/requirement/olm-console.yaml" % basedir)
     else:
         logger.info("OLM already exists.")
 
