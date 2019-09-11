@@ -263,7 +263,7 @@ def install(namespace, storage, loglevel, openshift):
     check_call(run, "kubectl apply -f %s/openaihub.catalogsource.yaml" % openaihub_catalog_path)
     # pylint: disable=unused-variable
     for x in range(40):
-        if run("kubectl get packagemanifest|grep OpenAIHub|wc -l").stdout.decode().lstrip().rstrip() != "4":
+        if run("kubectl get packagemanifest|grep OpenAIHub|wc -l").stdout.decode().lstrip().rstrip() != "5":
             time.sleep(15)
         else:
             break
