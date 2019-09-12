@@ -5,4 +5,4 @@ spec:
         - name: olm-operator
           resources:
             limits:
-            memory: "2000Mi"
+              memory: "2000Mi"
