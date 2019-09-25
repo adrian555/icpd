@@ -35,7 +35,9 @@ setuptools.setup(
         'click',
         'GitPython',
         'PyYAML',
-        'wget'
+        'wget',
+        'kubernetes',
+        'openshift'
     ],
     entry_points='''
         [console_scripts]

@@ -31,6 +31,13 @@ def cli():
 
 @cli.command()
 @click.version_option(expose_value=False)
+@click.option("--namespace", "-e", metavar="NAMESPACE", default="operators", show_default=True,
+              help="namespace where the operators are installed")
+def check_installed(namespace):
+    func.check_installed(namespace)
+
+@cli.command()
+@click.version_option(expose_value=False)
 @click.option("--openshift", metavar="PLATFORM", is_flag=True, default=False,
               help="install on openshift or others")
 @click.option("--path", metavar="PATH", required=True,

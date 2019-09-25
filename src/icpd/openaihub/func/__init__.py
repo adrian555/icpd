@@ -63,6 +63,16 @@ def wait_for(operator, namespace):
         else:
             break
         
+def check_installed(namespace):
+    from kubernetes import client, config
+    from openshift.dynamic import DynamicClient
+    k8s_client = config.new_client_from_config()
+    dyn_client = DynamicClient(k8s_client)
+    csv = dyn_client.resources.get(api_version='operators.coreos.com/v1alpha1', kind='ClusterServiceVersion')
+    csv_list = csv.get(namespace=namespace)
+    for x in csv_list.items:
+        print(x.metadata.name)
+        
 def install_operator(operator, subscription_file, logpath, loglevel, openshift):
     logger.setLevel(loglevel.upper())
     logger.addHandler(logging.FileHandler(os.path.join(logpath, "openaihub-%s.log" % operator)))
